@@ -42,6 +42,8 @@ From your command line:
     # Run the app in Editor
     ```
 
+> [!Tip]   
+You can download and run the latest jar [release](https://github.com/Ctere1/swing-quiz-gen/releases) directly.
 
 ## 🪟Screenshots
 
