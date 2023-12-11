@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,8 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
+
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JMenuBar;
@@ -35,6 +37,9 @@ import javax.swing.JMenu;
 import javax.swing.SwingConstants;
 
 public class MainWindow extends JFrame {
+
+	private String fontFilePathArial = "fonts/Arimo-Regular.ttf";
+	private String fontFilePathArialBold = "fonts/Arimo-Bold.ttf";
 
 	private JTextArea questionArea;
 	private JTextField topicField;
@@ -59,11 +64,13 @@ public class MainWindow extends JFrame {
 	private JTextField textField_4;
 	private JMenuBar menuBar;
 	private JMenu toolsMenu;
+	private JMenu mnNewMenu;
 
 	public MainWindow() {
 		setTitle("Quiz Generator");
 		setSize(1000, 600);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
 
 		answerKeys = new ArrayList<>();
 		questions = new ArrayList<>();
@@ -136,6 +143,21 @@ public class MainWindow extends JFrame {
 		toolsMenu.add(generatePdfButton);
 		sl_middlePanel.putConstraint(SpringLayout.NORTH, generatePdfButton, 10, SpringLayout.NORTH, middlePanel);
 		sl_middlePanel.putConstraint(SpringLayout.EAST, generatePdfButton, 0, SpringLayout.EAST, comboBox);
+
+		mnNewMenu = new JMenu("About");
+		menuBar.add(mnNewMenu);
+
+		// UPDATES
+
+		JButton checkUpdateButton = new JButton("Check for Updates");
+		mnNewMenu.add(checkUpdateButton);
+
+		checkUpdateButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				performUpdateCheck();
+			}
+		});
 
 		generatePdfButton.addActionListener(new ActionListener() {
 			@Override
@@ -257,6 +279,12 @@ public class MainWindow extends JFrame {
 		getContentPane().add(mainPanel);
 	}
 
+	private void performUpdateCheck() {
+		// UpdateChecker sınıfını kullanarak güncelleme kontrolü yapın
+		UpdateChecker updateChecker = new UpdateChecker();
+		updateChecker.checkForUpdates(this);
+	}
+
 	private void addQuestion() {
 		String question = questionArea.getText();
 		List<String> choicesForQuestion = new ArrayList<>();
@@ -324,8 +352,10 @@ public class MainWindow extends JFrame {
 
 	private void generatePdf() {
 		try {
+
 			topic = topicField.getText();
 			PDDocument document = new PDDocument();
+
 			int questionCount = questions.size();
 			int pageCount = (int) Math.ceil((double) questionCount / 4); // Page number
 
@@ -343,7 +373,7 @@ public class MainWindow extends JFrame {
 
 				// Add topic
 				contentStream.beginText();
-				contentStream.setFont(PDType1Font.HELVETICA_BOLD, 14);
+				contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArialBold)), 14);
 				contentStream.newLineAtOffset(margin, yStart);
 				contentStream.showText(topic);
 				contentStream.endText();
@@ -378,7 +408,7 @@ public class MainWindow extends JFrame {
 
 							contentStream.beginText();
 							// Set the font
-							contentStream.setFont(PDType1Font.HELVETICA_BOLD, 10);
+							contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArialBold)), 10);
 							if (j == 0) {
 								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 50);
 							} else {
@@ -386,7 +416,7 @@ public class MainWindow extends JFrame {
 							}
 
 							contentStream.showText((questionIndex + 1) + ") ");
-							contentStream.setFont(PDType1Font.HELVETICA, 10);
+							contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArial)), 10);
 							contentStream.newLineAtOffset(0, -15);
 							String[] wrappedText = WordUtils.wrap(question, 100).split("\\r?\\n");
 
@@ -410,7 +440,7 @@ public class MainWindow extends JFrame {
 
 				// Add page number
 				contentStream.beginText();
-				contentStream.setFont(PDType1Font.HELVETICA, 12);
+				contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArial)), 12);
 				float centerX = (page.getMediaBox().getWidth() / 2) - 3;
 				float centerY = headerYStart - tableHeight - 20;
 				contentStream.newLineAtOffset(centerX, centerY);
@@ -421,10 +451,22 @@ public class MainWindow extends JFrame {
 			}
 
 			addAnswerKeyPage(document);
-			document.save(topic + ".pdf");
+
+			// Check existing file name
+			String pdfFileName = topic + ".pdf";
+
+			File pdfFile = new File(pdfFileName);
+			int fileCount = 1;
+			while (pdfFile.exists()) {
+				pdfFileName = topic + "_" + fileCount + ".pdf";
+				pdfFile = new File(pdfFileName);
+				fileCount++;
+			}
+
+			document.save(pdfFileName);
 			document.close();
 
-			JOptionPane.showMessageDialog(this, "PDF Generated: " + topic + ".pdf", "Info",
+			JOptionPane.showMessageDialog(this, "PDF Generated: " + pdfFileName, "Info",
 					JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -441,15 +483,15 @@ public class MainWindow extends JFrame {
 		float yStart = answerKeyPage.getMediaBox().getHeight() - margin;
 
 		contentStream.beginText();
-		contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+		contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArialBold)), 12);
 		contentStream.newLineAtOffset(margin, yStart);
-		contentStream.showText("Cevap Anahtari");
+		contentStream.showText("Answers");
 		contentStream.endText();
 
 		float yPosition = yStart - 20;
 		for (int i = 0; i < answerKeys.size(); i++) {
 			contentStream.beginText();
-			contentStream.setFont(PDType1Font.HELVETICA, 10);
+			contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArial)), 10);
 			contentStream.newLineAtOffset(margin, yPosition);
 			contentStream.showText((i + 1) + "-) " + answerKeys.get(i));
 			contentStream.endText();
