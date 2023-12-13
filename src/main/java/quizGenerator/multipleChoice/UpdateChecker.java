@@ -16,9 +16,11 @@ import java.net.URLConnection;
 
 public class UpdateChecker extends JFrame {
 
+	private static final long serialVersionUID = 1L;
+
 	private static final String REPO_OWNER = "Ctere1";
 	private static final String REPO_NAME = "swing-quiz-gen";
-	private static final String CURRENT_VERSION = "v0.0.2";
+	private static final String CURRENT_VERSION = "v0.0.3";
 	private JLabel resultLabel;
 
 	public UpdateChecker() {

@@ -5,6 +5,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +39,10 @@ import javax.swing.SwingConstants;
 
 public class MainWindow extends JFrame {
 
-	private String fontFilePathArial = "fonts/Arimo-Regular.ttf";
-	private String fontFilePathArialBold = "fonts/Arimo-Bold.ttf";
+	private static final long serialVersionUID = 1L;
+
+	private String fontFilePathArial = "Arimo-Regular.ttf";
+	private String fontFilePathArialBold = "Arimo-Bold.ttf";
 
 	private JTextArea questionArea;
 	private JTextField topicField;
@@ -56,7 +59,7 @@ public class MainWindow extends JFrame {
 	private JList<String> questionList;
 	private DefaultListModel<String> questionListModel;
 	private JButton editButton;
-	private JComboBox comboBox;
+	private JComboBox<?> comboBox;
 	private JTextField textField;
 	private JTextField textField_1;
 	private JTextField textField_2;
@@ -373,7 +376,8 @@ public class MainWindow extends JFrame {
 
 				// Add topic
 				contentStream.beginText();
-				contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArialBold)), 14);
+				contentStream.setFont(
+						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 14);
 				contentStream.newLineAtOffset(margin, yStart);
 				contentStream.showText(topic);
 				contentStream.endText();
@@ -408,7 +412,9 @@ public class MainWindow extends JFrame {
 
 							contentStream.beginText();
 							// Set the font
-							contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArialBold)), 10);
+							contentStream.setFont(
+									PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
+									10);
 							if (j == 0) {
 								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 50);
 							} else {
@@ -416,7 +422,8 @@ public class MainWindow extends JFrame {
 							}
 
 							contentStream.showText((questionIndex + 1) + ") ");
-							contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArial)), 10);
+							contentStream.setFont(PDType0Font.load(document,
+									ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 10);
 							contentStream.newLineAtOffset(0, -15);
 							String[] wrappedText = WordUtils.wrap(question, 100).split("\\r?\\n");
 
@@ -440,7 +447,8 @@ public class MainWindow extends JFrame {
 
 				// Add page number
 				contentStream.beginText();
-				contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArial)), 12);
+				contentStream.setFont(
+						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 12);
 				float centerX = (page.getMediaBox().getWidth() / 2) - 3;
 				float centerY = headerYStart - tableHeight - 20;
 				contentStream.newLineAtOffset(centerX, centerY);
@@ -468,8 +476,18 @@ public class MainWindow extends JFrame {
 
 			JOptionPane.showMessageDialog(this, "PDF Generated: " + pdfFileName, "Info",
 					JOptionPane.INFORMATION_MESSAGE);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(this, "File not found: " + e.getMessage(), "File Not Found",
+					JOptionPane.ERROR_MESSAGE);
 		} catch (IOException e) {
 			e.printStackTrace();
+			JOptionPane.showMessageDialog(this, "Error during PDF generation: \n" + e.getMessage(), "IO Error",
+					JOptionPane.ERROR_MESSAGE);
+		} catch (Exception e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(this, "An unexpected error occurred: \n" + e.getMessage(), "Error",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -483,7 +501,8 @@ public class MainWindow extends JFrame {
 		float yStart = answerKeyPage.getMediaBox().getHeight() - margin;
 
 		contentStream.beginText();
-		contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArialBold)), 12);
+		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)),
+				12);
 		contentStream.newLineAtOffset(margin, yStart);
 		contentStream.showText("Answers");
 		contentStream.endText();
@@ -491,7 +510,8 @@ public class MainWindow extends JFrame {
 		float yPosition = yStart - 20;
 		for (int i = 0; i < answerKeys.size(); i++) {
 			contentStream.beginText();
-			contentStream.setFont(PDType0Font.load(document, new File(fontFilePathArial)), 10);
+			contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
+					10);
 			contentStream.newLineAtOffset(margin, yPosition);
 			contentStream.showText((i + 1) + "-) " + answerKeys.get(i));
 			contentStream.endText();
