@@ -1,6 +1,9 @@
 package quizGenerator.multipleChoice;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -25,7 +28,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpringLayout;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -50,10 +52,9 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 
-public class MainWindow extends JFrame {
+public class MainWindow {
 
-	private static final long serialVersionUID = 1L;
-
+	private JFrame mainFrame;
 	private String fontFilePathArial = "Arimo-Regular.ttf";
 	private String fontFilePathArialBold = "Arimo-Bold.ttf";
 
@@ -84,33 +85,48 @@ public class MainWindow extends JFrame {
 	private JMenuItem mntmGeneratePDFMenuItem;
 	private JMenuItem mntmGenerateDocxMenuItem;
 
+	/**
+	 * Create the application.
+	 */
 	public MainWindow() {
-		try {
-			Image iconImage = ImageIO.read(ResourceHelper.getResourceAsStream("file.png"));
-			setIconImage(iconImage);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		initializeComponents();
+	}
 
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initializeComponents() {
+		FlatDarkLaf.setup();
 		try {
+			System.setProperty("flatlaf.useWindowDecorations", "true");
+			System.setProperty("flatlaf.menuBarEmbedded", "true");
 			UIManager.setLookAndFeel(new FlatDarkLaf());
+
 		} catch (UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
 		}
-		setTitle("Quiz Generator");
-		setSize(1000, 600);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setLocationRelativeTo(null);
 
 		answerKeys = new ArrayList<>();
 		questions = new ArrayList<>();
 		choices = new ArrayList<>();
+		// MAIN FRAME
+		mainFrame = new JFrame("Quiz Generator");
+		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mainFrame.setSize(400, 300);
+		mainFrame.setSize(1000, 600);
+		mainFrame.setMinimumSize(new Dimension(800, 500));
+		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mainFrame.setLocationRelativeTo(null);
+		mainFrame.getRootPane().putClientProperty("JRootPane.titleBarShowIcon", true);
+		mainFrame.getRootPane().putClientProperty("JRootPane.titleBarBackground", Color.DARK_GRAY);
 
-		initializeComponents();
-	}
-
-	private void initializeComponents() {
-		FlatDarkLaf.setup();
+		try {
+			Image iconImage = ImageIO.read(ResourceHelper.getResourceAsStream("file.png"));
+			mainFrame.setIconImage(iconImage);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		mainFrame.setVisible(true);
 
 		choiceFields = new ArrayList<>();
 		String[] choiceLabels = { "A", "B", "C", "D", "E" };
@@ -170,7 +186,7 @@ public class MainWindow extends JFrame {
 
 		// TOOLS
 		menuBar = new JMenuBar();
-		setJMenuBar(menuBar);
+		mainFrame.setJMenuBar(menuBar);
 
 		toolsMenu = new JMenu("Tools");
 		toolsMenu.setHorizontalAlignment(SwingConstants.CENTER);
@@ -215,7 +231,7 @@ public class MainWindow extends JFrame {
 		aboutMenuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				AboutDialog aboutDialog = new AboutDialog(MainWindow.this);
+				AboutDialog aboutDialog = new AboutDialog(mainFrame);
 				aboutDialog.setVisible(true);
 			}
 		});
@@ -319,13 +335,13 @@ public class MainWindow extends JFrame {
 		mainPanel.add(middlePanel, BorderLayout.CENTER);
 		mainPanel.add(rightPanel, BorderLayout.EAST);
 
-		getContentPane().add(mainPanel);
+		mainFrame.getContentPane().add(mainPanel);
 	}
 
 	private void performUpdateCheck() {
 		// UpdateChecker sınıfını kullanarak güncelleme kontrolü yapın
 		UpdateChecker updateChecker = new UpdateChecker();
-		updateChecker.checkForUpdates(this);
+		updateChecker.checkForUpdates(mainFrame);
 	}
 
 	private void addQuestion() {
@@ -351,7 +367,7 @@ public class MainWindow extends JFrame {
 	}
 
 	private void resetQuestions() {
-		int result = JOptionPane.showConfirmDialog(this, "Are you sure you want to reset all questions?",
+		int result = JOptionPane.showConfirmDialog(mainFrame, "Are you sure you want to reset all questions?",
 				"Reset Confirmation", JOptionPane.YES_NO_OPTION);
 
 		if (result == JOptionPane.YES_OPTION) {
@@ -367,7 +383,7 @@ public class MainWindow extends JFrame {
 		String answer = answerKeys.get(index);
 		List<String> choicesForQuestion = choices.get(index);
 
-		EditQuestionDialog editDialog = new EditQuestionDialog(this, question, choicesForQuestion, answer);
+		EditQuestionDialog editDialog = new EditQuestionDialog(mainFrame, question, choicesForQuestion, answer);
 		editDialog.setVisible(true);
 
 		if (editDialog.isDelete()) {
@@ -383,12 +399,13 @@ public class MainWindow extends JFrame {
 	}
 
 	private void deleteQuestion(int index) {
-		int result = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this question?",
+		int result = JOptionPane.showConfirmDialog(mainFrame, "Are you sure you want to delete this question?",
 				"Delete Confirmation", JOptionPane.YES_NO_OPTION);
 
 		if (result == JOptionPane.YES_OPTION) {
 			questions.remove(index);
 			choices.remove(index);
+			answerKeys.remove(index);
 			questionListModel.remove(index);
 		}
 	}
@@ -440,13 +457,13 @@ public class MainWindow extends JFrame {
 
 			try (FileOutputStream out = new FileOutputStream(docxFileName)) {
 				document.write(out);
-				JOptionPane.showMessageDialog(this, "Word Document Generated: " + docxFileName, "Info",
+				JOptionPane.showMessageDialog(mainFrame, "Word Document Generated: " + docxFileName, "Info",
 						JOptionPane.INFORMATION_MESSAGE);
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(this, "An unexpected error occurred: \n" + e.getMessage(), "Error",
+			JOptionPane.showMessageDialog(mainFrame, "An unexpected error occurred: \n" + e.getMessage(), "Error",
 					JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -606,19 +623,19 @@ public class MainWindow extends JFrame {
 			document.save(pdfFileName);
 			document.close();
 
-			JOptionPane.showMessageDialog(this, "PDF Generated: " + pdfFileName, "Info",
+			JOptionPane.showMessageDialog(mainFrame, "PDF Generated: " + pdfFileName, "Info",
 					JOptionPane.INFORMATION_MESSAGE);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(this, "File not found: " + e.getMessage(), "File Not Found",
+			JOptionPane.showMessageDialog(mainFrame, "File not found: " + e.getMessage(), "File Not Found",
 					JOptionPane.ERROR_MESSAGE);
 		} catch (IOException e) {
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(this, "Error during PDF generation: \n" + e.getMessage(), "IO Error",
+			JOptionPane.showMessageDialog(mainFrame, "Error during PDF generation: \n" + e.getMessage(), "IO Error",
 					JOptionPane.ERROR_MESSAGE);
 		} catch (Exception e) {
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(this, "An unexpected error occurred: \n" + e.getMessage(), "Error",
+			JOptionPane.showMessageDialog(mainFrame, "An unexpected error occurred: \n" + e.getMessage(), "Error",
 					JOptionPane.ERROR_MESSAGE);
 		}
 	}
@@ -688,10 +705,18 @@ public class MainWindow extends JFrame {
 		contentStream.close();
 	}
 
+	/**
+	 * Launch the application.
+	 */
 	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
+		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				new MainWindow().setVisible(true);
+				try {
+					MainWindow window = new MainWindow();
+					window.mainFrame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		});
 	}
