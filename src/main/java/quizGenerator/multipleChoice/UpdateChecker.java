@@ -20,7 +20,7 @@ public class UpdateChecker extends JFrame {
 
 	private static final String REPO_OWNER = "Ctere1";
 	private static final String REPO_NAME = "swing-quiz-gen";
-	private static final String CURRENT_VERSION = "v0.0.3";
+	protected static final String CURRENT_VERSION = "v0.0.4";
 	private JLabel resultLabel;
 
 	public UpdateChecker() {

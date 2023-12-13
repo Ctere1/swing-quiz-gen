@@ -2,6 +2,7 @@ package quizGenerator.multipleChoice;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -10,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -23,6 +25,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.apache.commons.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -31,11 +35,14 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.SwingConstants;
+import javax.swing.JMenuItem;
 
 public class MainWindow extends JFrame {
 
@@ -48,7 +55,6 @@ public class MainWindow extends JFrame {
 	private JTextField topicField;
 	private List<JTextField> choiceFields;
 	private JButton addQuestionButton;
-	private JButton generatePdfButton;
 	private JButton resetButton;
 	private String topic;
 
@@ -68,8 +74,22 @@ public class MainWindow extends JFrame {
 	private JMenuBar menuBar;
 	private JMenu toolsMenu;
 	private JMenu mnNewMenu;
+	private JMenuItem mntmUpdateMenuItem;
+	private JMenuItem mntmGeneratePDFMenuItem;
 
 	public MainWindow() {
+		try {
+			Image iconImage = ImageIO.read(ResourceHelper.getResourceAsStream("file.png"));
+			setIconImage(iconImage);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			UIManager.setLookAndFeel(new FlatDarkLaf());
+		} catch (UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
+		}
 		setTitle("Quiz Generator");
 		setSize(1000, 600);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -83,6 +103,7 @@ public class MainWindow extends JFrame {
 	}
 
 	private void initializeComponents() {
+		FlatDarkLaf.setup();
 
 		choiceFields = new ArrayList<>();
 		String[] choiceLabels = { "A", "B", "C", "D", "E" };
@@ -92,7 +113,9 @@ public class MainWindow extends JFrame {
 
 		questionListModel = new DefaultListModel<>();
 		questionList = new JList<>(questionListModel);
+		questionList.setToolTipText("");
 		JScrollPane questionScrollPane = new JScrollPane(questionList);
+		questionScrollPane.setToolTipText("");
 
 		editButton = new JButton("Edit Question");
 
@@ -115,7 +138,9 @@ public class MainWindow extends JFrame {
 
 		JPanel leftPanel = new JPanel();
 		leftPanel.setLayout(new BorderLayout());
-		leftPanel.add(new JLabel("Questions"), BorderLayout.NORTH);
+		JLabel label_4 = new JLabel("Questions");
+		label_4.setHorizontalAlignment(SwingConstants.CENTER);
+		leftPanel.add(label_4, BorderLayout.NORTH);
 		leftPanel.add(questionScrollPane, BorderLayout.CENTER);
 		resetButton = new JButton("Reset Questions");
 
@@ -136,36 +161,45 @@ public class MainWindow extends JFrame {
 		sl_middlePanel.putConstraint(SpringLayout.SOUTH, addQuestionButton, -10, SpringLayout.SOUTH, middlePanel);
 		middlePanel.setLayout(sl_middlePanel);
 
+		// TOOLS
 		menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 
 		toolsMenu = new JMenu("Tools");
 		toolsMenu.setHorizontalAlignment(SwingConstants.CENTER);
 		menuBar.add(toolsMenu);
-		generatePdfButton = new JButton("Generate PDF");
-		toolsMenu.add(generatePdfButton);
-		sl_middlePanel.putConstraint(SpringLayout.NORTH, generatePdfButton, 10, SpringLayout.NORTH, middlePanel);
-		sl_middlePanel.putConstraint(SpringLayout.EAST, generatePdfButton, 0, SpringLayout.EAST, comboBox);
+		mntmGeneratePDFMenuItem = new JMenuItem("Generate PDF");
+		toolsMenu.add(mntmGeneratePDFMenuItem);
+		sl_middlePanel.putConstraint(SpringLayout.NORTH, mntmGeneratePDFMenuItem, 10, SpringLayout.NORTH, middlePanel);
+		sl_middlePanel.putConstraint(SpringLayout.EAST, mntmGeneratePDFMenuItem, 0, SpringLayout.EAST, comboBox);
 
-		mnNewMenu = new JMenu("About");
+		mntmGeneratePDFMenuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				generatePdf();
+			}
+		});
+		// UPDATES
+		mnNewMenu = new JMenu("Help");
 		menuBar.add(mnNewMenu);
 
-		// UPDATES
+		mntmUpdateMenuItem = new JMenuItem("Check for Updates");
+		mnNewMenu.add(mntmUpdateMenuItem);
+		JMenuItem aboutMenuItem = new JMenuItem("About");
+		mnNewMenu.add(aboutMenuItem);
 
-		JButton checkUpdateButton = new JButton("Check for Updates");
-		mnNewMenu.add(checkUpdateButton);
-
-		checkUpdateButton.addActionListener(new ActionListener() {
+		mntmUpdateMenuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				performUpdateCheck();
 			}
 		});
 
-		generatePdfButton.addActionListener(new ActionListener() {
+		aboutMenuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				generatePdf();
+				AboutDialog aboutDialog = new AboutDialog(MainWindow.this);
+				aboutDialog.setVisible(true);
 			}
 		});
 
@@ -178,11 +212,6 @@ public class MainWindow extends JFrame {
 		sl_middlePanel.putConstraint(SpringLayout.NORTH, topicField, 6, SpringLayout.SOUTH, label);
 		sl_middlePanel.putConstraint(SpringLayout.WEST, topicField, 0, SpringLayout.WEST, label);
 		sl_middlePanel.putConstraint(SpringLayout.EAST, topicField, -299, SpringLayout.EAST, middlePanel);
-//		topicField.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				topic = topicField.getText();
-//			}
-//		});
 		middlePanel.add(topicField);
 
 		// Question
@@ -200,12 +229,6 @@ public class MainWindow extends JFrame {
 		sl_middlePanel.putConstraint(SpringLayout.EAST, addQuestionButton, 0, SpringLayout.EAST, comboBox);
 		sl_middlePanel.putConstraint(SpringLayout.NORTH, comboBox, 6, SpringLayout.SOUTH, label_2);
 		comboBox.setModel(new DefaultComboBoxModel(new String[] { "Select", "A", "B", "C", "D", "E" }));
-
-//		comboBox.addActionListener(e -> {
-//			JComboBox c = (JComboBox) e.getSource();
-//			answerKeys.add(c.getSelectedItem().toString());
-//		});
-
 		middlePanel.add(comboBox);
 
 		// Choices

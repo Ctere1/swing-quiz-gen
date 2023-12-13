@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -77,6 +78,7 @@ class EditQuestionDialog extends JDialog {
 	private void initializeComponents() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new GridLayout(editedChoiceFields.size() + 4, 4));
+		panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		panel.add(new JLabel("Edited Question:"));
 		panel.add(editedQuestionField);
 
