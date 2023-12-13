@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,11 @@ import javax.swing.JMenu;
 import javax.swing.SwingConstants;
 import javax.swing.JMenuItem;
 
+import org.apache.poi.xwpf.usermodel.BreakType;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+
 public class MainWindow extends JFrame {
 
 	private static final long serialVersionUID = 1L;
@@ -76,6 +82,7 @@ public class MainWindow extends JFrame {
 	private JMenu mnNewMenu;
 	private JMenuItem mntmUpdateMenuItem;
 	private JMenuItem mntmGeneratePDFMenuItem;
+	private JMenuItem mntmGenerateDocxMenuItem;
 
 	public MainWindow() {
 		try {
@@ -172,6 +179,16 @@ public class MainWindow extends JFrame {
 		toolsMenu.add(mntmGeneratePDFMenuItem);
 		sl_middlePanel.putConstraint(SpringLayout.NORTH, mntmGeneratePDFMenuItem, 10, SpringLayout.NORTH, middlePanel);
 		sl_middlePanel.putConstraint(SpringLayout.EAST, mntmGeneratePDFMenuItem, 0, SpringLayout.EAST, comboBox);
+
+		mntmGenerateDocxMenuItem = new JMenuItem("Generate DOCX");
+		toolsMenu.add(mntmGenerateDocxMenuItem);
+
+		mntmGenerateDocxMenuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				generateWordDocument();
+			}
+		});
 
 		mntmGeneratePDFMenuItem.addActionListener(new ActionListener() {
 			@Override
@@ -376,6 +393,86 @@ public class MainWindow extends JFrame {
 		}
 	}
 
+	private void generateWordDocument() {
+		try {
+			topic = topicField.getText();
+			XWPFDocument document = new XWPFDocument();
+
+			for (int questionIndex = 0; questionIndex < questions.size(); questionIndex++) {
+				String question = questions.get(questionIndex);
+				List<String> choicesForQuestion = choices.get(questionIndex);
+
+				// Add question to document
+				XWPFParagraph paragraph = document.createParagraph();
+				XWPFRun run = paragraph.createRun();
+				run.setBold(true);
+				run.setText((questionIndex + 1) + ")");
+				run.setBold(false);
+				run.addBreak();
+
+				run.setText(question);
+
+				// Add choices to document
+				for (int choiceIndex = 0; choiceIndex < choicesForQuestion.size(); choiceIndex++) {
+					paragraph = document.createParagraph();
+					run = paragraph.createRun();
+					run.setText((char) ('A' + choiceIndex) + ") " + choicesForQuestion.get(choiceIndex));
+				}
+				run.addBreak();
+			}
+
+			// Add page break before the inserting answers
+			XWPFParagraph paragraph = document.createParagraph();
+			XWPFRun run = paragraph.createRun();
+			run.addBreak(BreakType.PAGE);
+			addAnswerKeyPage(document);
+
+			// Save the Word document
+			String docxFileName = topic + ".docx";
+
+			File docxFile = new File(docxFileName);
+			int fileCount = 1;
+			while (docxFile.exists()) {
+				docxFileName = topic + "_" + fileCount + ".docx";
+				docxFile = new File(docxFileName);
+				fileCount++;
+			}
+
+			try (FileOutputStream out = new FileOutputStream(docxFileName)) {
+				document.write(out);
+				JOptionPane.showMessageDialog(this, "Word Document Generated: " + docxFileName, "Info",
+						JOptionPane.INFORMATION_MESSAGE);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(this, "An unexpected error occurred: \n" + e.getMessage(), "Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void addAnswerKeyPage(XWPFDocument document) throws IOException {
+		XWPFParagraph paragraph = document.createParagraph();
+		setBoldText(paragraph.createRun(), "Answers", 14);
+
+		for (int i = 0; i < answerKeys.size(); i++) {
+			XWPFParagraph answerParagraph = document.createParagraph();
+			setNormalText(answerParagraph.createRun(), (i + 1) + "-) " + answerKeys.get(i), 12);
+		}
+	}
+
+	private void setBoldText(XWPFRun run, String text, int fontSize) {
+		run.setText(text);
+		run.setBold(true);
+		run.setFontSize(fontSize);
+	}
+
+	private void setNormalText(XWPFRun run, String text, int fontSize) {
+		run.setText(text);
+		run.setBold(false);
+		run.setFontSize(fontSize);
+	}
+
 	private void generatePdf() {
 		try {
 
@@ -391,22 +488,22 @@ public class MainWindow extends JFrame {
 				PDPageContentStream contentStream = new PDPageContentStream(document, page);
 
 				float margin = 25;
-				float yStart = page.getMediaBox().getHeight() - margin;
+				float yStart = page.getMediaBox().getHeight();
 				float tableWidth = page.getMediaBox().getWidth() - 2 * margin;
-				float yPosition = yStart;
 				float bottomMargin = 70;
 				float tableHeight = yStart - bottomMargin;
 
 				// Add topic
 				contentStream.beginText();
 				contentStream.setFont(
-						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 14);
-				contentStream.newLineAtOffset(margin, yStart);
+						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 11);
+				contentStream.newLineAtOffset(margin, yStart - margin);
+				contentStream.setLeading(14.5f);
 				contentStream.showText(topic);
 				contentStream.endText();
 
 				// Draw the table headers
-				float headerYPosition = yPosition;
+				float headerYPosition = yStart - margin;
 				float headerYStart = headerYPosition;
 				float tableYPosition = yStart - 20;
 
@@ -417,6 +514,7 @@ public class MainWindow extends JFrame {
 					if (i == 1) {
 						contentStream.lineTo(nextXStart, headerYStart - tableHeight);
 					}
+					contentStream.setLineWidth(0.5f);
 					contentStream.stroke();
 				}
 
@@ -436,31 +534,42 @@ public class MainWindow extends JFrame {
 							contentStream.beginText();
 							// Set the font
 							contentStream.setFont(PDType0Font.load(document,
-									ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 10);
+									ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 9);
 							if (j == 0) {
 								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 50);
 							} else {
-								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 400);
+								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 450);
 							}
 
+							// QUESTION NUMBER TEXT
 							contentStream.showText((questionIndex + 1) + ") ");
 							contentStream.setFont(
 									PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
-									10);
+									9);
 							contentStream.newLineAtOffset(0, -15);
-							String[] wrappedText = WordUtils.wrap(question, 100).split("\\r?\\n");
 
+							// QUESTION TEXT
+							String[] wrappedText = WordUtils.wrap(question, 55).split("\\r?\\n");
 							for (int k = 0; k < wrappedText.length; k++) {
-								if (k > 0) {
-									contentStream.newLineAtOffset(0, -15); // Add a space before moving to a new line
-								}
 								contentStream.showText(wrappedText[k]);
+								contentStream.newLineAtOffset(0, -15); // Add a space before moving to a new line
 							}
 
-							// Choices
+							// QUESTION CHOICES write index ABCDE
 							for (int k = 0; k < choicesForQuestion.size(); k++) {
-								contentStream.newLineAtOffset(0, -15);
-								contentStream.showText((char) ('A' + k) + ") " + choicesForQuestion.get(k));
+								contentStream.setFont(PDType0Font.load(document,
+										ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 9);
+								contentStream.showText((char) ('A' + k) + ") ");
+
+								// check choice's lenght, write text
+								String[] wrappedChoice = WordUtils.wrap(choicesForQuestion.get(k), 55).split("\\r?\\n");
+								contentStream.setFont(PDType0Font.load(document,
+										ResourceHelper.getResourceAsStream(fontFilePathArial)), 9);
+								for (int o = 0; o < wrappedChoice.length; o++) {
+									contentStream.showText(wrappedChoice[o]);
+									contentStream.newLineAtOffset(0, -15); // Add a space before moving to a new line
+								}
+
 							}
 
 							contentStream.endText();
@@ -471,7 +580,7 @@ public class MainWindow extends JFrame {
 				// Add page number
 				contentStream.beginText();
 				contentStream.setFont(
-						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 12);
+						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 11);
 				float centerX = (page.getMediaBox().getWidth() / 2) - 3;
 				float centerY = headerYStart - tableHeight - 20;
 				contentStream.newLineAtOffset(centerX, centerY);
@@ -515,7 +624,6 @@ public class MainWindow extends JFrame {
 	}
 
 	private void addAnswerKeyPage(PDDocument document) throws IOException {
-
 		PDPage answerKeyPage = new PDPage(PDRectangle.A4);
 		document.addPage(answerKeyPage);
 
@@ -525,19 +633,55 @@ public class MainWindow extends JFrame {
 
 		contentStream.beginText();
 		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)),
-				12);
+				11);
 		contentStream.newLineAtOffset(margin, yStart);
 		contentStream.showText("Answers");
 		contentStream.endText();
 
+		float tableWidth = answerKeyPage.getMediaBox().getWidth() - 2 * margin;
 		float yPosition = yStart - 20;
-		for (int i = 0; i < answerKeys.size(); i++) {
-			contentStream.beginText();
-			contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
-					10);
-			contentStream.newLineAtOffset(margin, yPosition);
-			contentStream.showText((i + 1) + "-) " + answerKeys.get(i));
-			contentStream.endText();
+
+		int numColumns = 10;
+		int numRows = (int) Math.ceil((double) answerKeys.size() / numColumns);
+
+		float columnWidth = tableWidth / numColumns;
+		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)), 9);
+		// Draw table content
+		for (int i = 0; i < numRows; i++) {
+			for (int j = 0; j < numColumns; j++) {
+				int index = i * numColumns + j;
+				if (index < answerKeys.size()) {
+					float xPosition = margin + j * columnWidth;
+
+					// Draw cell borders
+					contentStream.setLineWidth(0.5f);
+
+					// Draw left border of the cell
+					contentStream.moveTo(xPosition, yPosition);
+					contentStream.lineTo(xPosition, yPosition - 20);
+					contentStream.stroke();
+
+					// Draw top border of the cell
+					contentStream.moveTo(xPosition, yPosition);
+					contentStream.lineTo(xPosition + columnWidth, yPosition);
+					contentStream.stroke();
+
+					// Draw right border of the cell
+					contentStream.moveTo(xPosition + columnWidth, yPosition);
+					contentStream.lineTo(xPosition + columnWidth, yPosition - 20);
+					contentStream.stroke();
+
+					// Draw bottom border of the cell
+					contentStream.moveTo(xPosition, yPosition - 20);
+					contentStream.lineTo(xPosition + columnWidth, yPosition - 20);
+					contentStream.stroke();
+
+					contentStream.beginText();
+					contentStream.newLineAtOffset(xPosition + 5, yPosition - 13);
+					contentStream.showText((index + 1) + ") " + answerKeys.get(index));
+					contentStream.endText();
+				}
+			}
 			yPosition -= 20;
 		}
 
