@@ -338,7 +338,7 @@ public class MainWindow extends JFrame {
 			questions.set(index, editDialog.getEditedQuestion());
 			answerKeys.set(index, editDialog.getEditedAnswer());
 			choices.set(index, editDialog.getEditedChoices());
-			questionListModel.setElementAt(index + 1 + ". Soru", index);
+			questionListModel.setElementAt(index + 1 + ". Question", index);
 		}
 	}
 
@@ -412,9 +412,8 @@ public class MainWindow extends JFrame {
 
 							contentStream.beginText();
 							// Set the font
-							contentStream.setFont(
-									PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
-									10);
+							contentStream.setFont(PDType0Font.load(document,
+									ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 10);
 							if (j == 0) {
 								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 50);
 							} else {
@@ -422,8 +421,9 @@ public class MainWindow extends JFrame {
 							}
 
 							contentStream.showText((questionIndex + 1) + ") ");
-							contentStream.setFont(PDType0Font.load(document,
-									ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 10);
+							contentStream.setFont(
+									PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
+									10);
 							contentStream.newLineAtOffset(0, -15);
 							String[] wrappedText = WordUtils.wrap(question, 100).split("\\r?\\n");
 

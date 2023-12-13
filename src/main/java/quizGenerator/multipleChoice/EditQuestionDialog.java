@@ -6,7 +6,9 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -14,8 +16,11 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 class EditQuestionDialog extends JDialog {
+
+	private static final long serialVersionUID = 1L;
+
 	private JTextField editedQuestionField;
-	private JTextField editedAnswerField;
+	private JComboBox<?> editedAnswerField;
 	private List<JTextField> editedChoiceFields;
 	private JButton confirmButton;
 	private JButton deleteButton;
@@ -31,7 +36,8 @@ class EditQuestionDialog extends JDialog {
 		delete = false;
 
 		editedQuestionField = new JTextField(question);
-		editedAnswerField = new JTextField(answer);
+		editedAnswerField = new JComboBox(new DefaultComboBoxModel(new String[] { "Select", "A", "B", "C", "D", "E" }));
+		editedAnswerField.setSelectedItem(answer);
 		editedChoiceFields = new ArrayList<>();
 		for (int i = 0; i < choices.size(); i++) {
 			JTextField choiceField = new JTextField(choices.get(i));
@@ -94,7 +100,9 @@ class EditQuestionDialog extends JDialog {
 	}
 
 	public String getEditedAnswer() {
-		return editedAnswerField.getText();
+		Object selectedAnswer = editedAnswerField.getSelectedItem();
+
+		return (selectedAnswer != null) ? selectedAnswer.toString() : "";
 	}
 
 	public List<String> getEditedChoices() {
