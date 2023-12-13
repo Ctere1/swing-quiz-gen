@@ -25,8 +25,8 @@
 
 ## ℹ️ Introduction
 - This is a simple JAVA Swing project. 
-- You can generate quiz tests based on input received from the user.
-- You can get the output in pdf format.
+- You can generate quiz tests based on input from the user.
+- You can get the output in `pdf` and `docx` format.
 
 
 ## 💾Installation Guide
