@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -16,8 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,11 +28,18 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.JToggleButton;
+import javax.swing.JToolBar;
 import javax.swing.SpringLayout;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledEditorKit;
 
 import org.apache.commons.text.WordUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -41,6 +51,7 @@ import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import com.formdev.flatlaf.FlatDarkLaf;
 
 import javax.swing.JComboBox;
+import javax.swing.JEditorPane;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -51,14 +62,17 @@ import org.apache.poi.xwpf.usermodel.BreakType;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import java.awt.SystemColor;
 
 public class MainWindow {
 
 	private JFrame mainFrame;
-	private String fontFilePathArial = "Arimo-Regular.ttf";
-	private String fontFilePathArialBold = "Arimo-Bold.ttf";
+	private String fontFilePathArimo = "Arimo-Regular.ttf";
+	private String fontFilePathArimoBold = "Arimo-Bold.ttf";
 
-	private JTextArea questionArea;
+	private JTextPane questionArea;
+	private JScrollPane questionScrollPane;
+	private JScrollPane questionAreaScrollPane;
 	private JTextField topicField;
 	private List<JTextField> choiceFields;
 	private JButton addQuestionButton;
@@ -84,6 +98,8 @@ public class MainWindow {
 	private JMenuItem mntmUpdateMenuItem;
 	private JMenuItem mntmGeneratePDFMenuItem;
 	private JMenuItem mntmGenerateDocxMenuItem;
+
+	private JToolBar toolBar;
 
 	/**
 	 * Create the application.
@@ -273,16 +289,18 @@ public class MainWindow {
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BorderLayout());
 
-		questionArea = new JTextArea(15, 15);
-		sl_middlePanel.putConstraint(SpringLayout.EAST, comboBox, 0, SpringLayout.EAST, questionArea);
-		sl_middlePanel.putConstraint(SpringLayout.NORTH, label_3, 6, SpringLayout.SOUTH, questionArea);
-		sl_middlePanel.putConstraint(SpringLayout.NORTH, questionArea, 6, SpringLayout.SOUTH, label_1);
-		sl_middlePanel.putConstraint(SpringLayout.SOUTH, questionArea, -335, SpringLayout.SOUTH, middlePanel);
-		sl_middlePanel.putConstraint(SpringLayout.WEST, questionArea, 0, SpringLayout.WEST, label);
-		sl_middlePanel.putConstraint(SpringLayout.EAST, questionArea, -49, SpringLayout.EAST, middlePanel);
-		questionArea.setTabSize(15);
-		questionArea.setLineWrap(true);
-		middlePanel.add(questionArea);
+		questionArea = new JTextPane();
+		questionAreaScrollPane = new JScrollPane(questionArea);
+		questionAreaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		questionAreaScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		sl_middlePanel.putConstraint(SpringLayout.EAST, comboBox, 0, SpringLayout.EAST, questionAreaScrollPane);
+		sl_middlePanel.putConstraint(SpringLayout.NORTH, label_3, 6, SpringLayout.SOUTH, questionAreaScrollPane);
+		sl_middlePanel.putConstraint(SpringLayout.NORTH, questionAreaScrollPane, 6, SpringLayout.SOUTH, label_1);
+		sl_middlePanel.putConstraint(SpringLayout.SOUTH, questionAreaScrollPane, -335, SpringLayout.SOUTH, middlePanel);
+		sl_middlePanel.putConstraint(SpringLayout.WEST, questionAreaScrollPane, 0, SpringLayout.WEST, label);
+		sl_middlePanel.putConstraint(SpringLayout.EAST, questionAreaScrollPane, -49, SpringLayout.EAST, middlePanel);
+		questionArea.setEditable(true);
+		middlePanel.add(questionAreaScrollPane);
 
 		textField = new JTextField();
 		sl_middlePanel.putConstraint(SpringLayout.WEST, comboBox, 26, SpringLayout.EAST, textField);
@@ -335,7 +353,113 @@ public class MainWindow {
 		mainPanel.add(middlePanel, BorderLayout.CENTER);
 		mainPanel.add(rightPanel, BorderLayout.EAST);
 
+		// TOOLBAR
+		toolBar = new JToolBar();
+		toolBar.setBackground(SystemColor.controlDkShadow);
+		toolBar.setFloatable(false);
+
+		addToolbarButtons();
+		mainFrame.getContentPane().add(toolBar, BorderLayout.NORTH);
+
 		mainFrame.getContentPane().add(mainPanel);
+	}
+
+	private void addToolbarButtons() {
+		addButtonToToolBar("Copy", "copy.png", new DefaultEditorKit.CopyAction(), 16, 16);
+		addButtonToToolBar("Cut", "cut.png", new DefaultEditorKit.CutAction(), 16, 16);
+		addButtonToToolBar("Paste", "paste.png", new DefaultEditorKit.PasteAction(), 16, 16);
+
+		/**
+		 * CAN NOT SAVE THESE IN PDF FOR NOW SO I DISABLED
+		 */
+//		toolBar.addSeparator();
+//		addStyleButton("Bold", "bold.png", "font-bold", 16, 16);
+//		addStyleButton("Italic", "italic.png", "font-italic", 16, 16);
+//		addStyleButton("Underline", "underline.png", "font-underline", 16, 16);
+//
+//		toolBar.addSeparator();
+//		addAlignmentButton("Left", "align-left.png", StyleConstants.ALIGN_LEFT, 16, 16);
+//		addAlignmentButton("Center", "align-center.png", StyleConstants.ALIGN_CENTER, 16, 16);
+//		addAlignmentButton("Right", "align-right.png", StyleConstants.ALIGN_RIGHT, 16, 16);
+//		addAlignmentButton("Justify", "align-justify.png", StyleConstants.ALIGN_JUSTIFIED, 16, 16);
+//
+//		toolBar.addSeparator();
+//		addFontSelector();
+	}
+
+	private void addStyleButton(String text, String iconName, final String styleName, int iconWidth, int iconHeight) {
+		Action action = new StyledEditorKit.StyledTextAction(text) {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JEditorPane editor = getEditor(e);
+				if (editor != null) {
+					StyledEditorKit kit = getStyledEditorKit(editor);
+					MutableAttributeSet attr = kit.getInputAttributes();
+					boolean isStyleSet = StyleConstants.isBold(attr) || StyleConstants.isItalic(attr)
+							|| StyleConstants.isUnderline(attr);
+
+					switch (styleName) {
+					case "bold":
+						StyleConstants.setBold(attr, !isStyleSet);
+						break;
+					case "italic":
+						StyleConstants.setItalic(attr, !isStyleSet);
+						break;
+					case "underline":
+						StyleConstants.setUnderline(attr, !isStyleSet);
+						break;
+					}
+					setCharacterAttributes(editor, new SimpleAttributeSet(), false);
+
+				}
+			}
+		};
+
+		addToggleButtonToToolBar(text, iconName, action, iconWidth, iconHeight);
+	}
+
+	private void addAlignmentButton(String text, String iconName, int alignment, int iconWidth, int iconHeight) {
+		Action action = new StyledEditorKit.AlignmentAction(text, alignment);
+		addToggleButtonToToolBar(text, iconName, action, iconWidth, iconHeight);
+	}
+
+	private void addButtonToToolBar(String text, String iconName, Action action, int iconWidth, int iconHeight) {
+		JButton button = new JButton(action);
+		button.setText(text);
+		button.setToolTipText(text);
+		button.setFocusable(false);
+
+		ImageIcon icon = new ImageIcon(getClass().getResource("/" + iconName));
+		Image scaledImage = icon.getImage().getScaledInstance(iconWidth, iconHeight, Image.SCALE_SMOOTH);
+		button.setIcon(new ImageIcon(scaledImage));
+		toolBar.add(button);
+	}
+
+	private void addToggleButtonToToolBar(String text, String iconName, Action action, int iconWidth, int iconHeight) {
+		JToggleButton button = new JToggleButton(action);
+		button.setText(text);
+		button.setToolTipText(text);
+		button.setFocusable(false);
+
+		ImageIcon icon = new ImageIcon(getClass().getResource("/" + iconName));
+		Image scaledImage = icon.getImage().getScaledInstance(iconWidth, iconHeight, Image.SCALE_SMOOTH);
+		button.setIcon(new ImageIcon(scaledImage));
+		toolBar.add(button);
+	}
+
+	private void addFontSelector() {
+		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		JComboBox<String> fontSelector = new JComboBox<>(fontNames);
+		fontSelector.addActionListener(e -> {
+			String selectedFont = (String) fontSelector.getSelectedItem();
+			if (selectedFont != null) {
+				Action action = new StyledEditorKit.FontFamilyAction(selectedFont, selectedFont);
+				action.actionPerformed(new ActionEvent(fontSelector, ActionEvent.ACTION_PERFORMED, null));
+			}
+		});
+
+		toolBar.add(new JLabel("Font: "));
+		toolBar.add(fontSelector);
 	}
 
 	private void performUpdateCheck() {
@@ -513,7 +637,7 @@ public class MainWindow {
 				// Add topic
 				contentStream.beginText();
 				contentStream.setFont(
-						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 11);
+						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArimoBold)), 11);
 				contentStream.newLineAtOffset(margin, yStart - margin);
 				contentStream.setLeading(14.5f);
 				contentStream.showText(topic);
@@ -551,7 +675,7 @@ public class MainWindow {
 							contentStream.beginText();
 							// Set the font
 							contentStream.setFont(PDType0Font.load(document,
-									ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 9);
+									ResourceHelper.getResourceAsStream(fontFilePathArimoBold)), 9);
 							if (j == 0) {
 								contentStream.newLineAtOffset(nextXStart + 10, tableYPosition - 50);
 							} else {
@@ -561,9 +685,47 @@ public class MainWindow {
 							// QUESTION NUMBER TEXT
 							contentStream.showText((questionIndex + 1) + ") ");
 							contentStream.setFont(
-									PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)),
+									PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArimo)),
 									9);
 							contentStream.newLineAtOffset(0, -15);
+
+							/**
+							 * 
+							 * TRYING NEW ALG
+							 * 
+							 * 
+							 */
+//							char[] charArray = question.toCharArray();
+//							StringBuilder stringBuilder = new StringBuilder();
+//							PDType0Font font = PDType0Font.load(document,
+//									ResourceHelper.getResourceAsStream(fontFilePathArial));
+//
+//							for (int q = 0; q < charArray.length; q++) {
+//								stringBuilder.append(charArray[q]);
+//
+//								// New line at 60 char
+//								if ((q + 1) % 60 == 0) {
+//									contentStream.setFont(font, 9);
+//									System.out.println(stringBuilder.toString().replaceAll("[\\r\\n]", ""));
+//									contentStream.showText(stringBuilder.toString().replaceAll("[\\r\\n]", ""));
+//									contentStream.newLineAtOffset(0, -15);
+//									stringBuilder.setLength(0); // StringBuilder'ı sıfırla
+//								}
+//							}
+//
+//							
+//							if (stringBuilder.length() > 0) {
+//								contentStream.setFont(font, 9);
+//								System.out.println(stringBuilder.toString().replaceAll("[\\r\\n]", ""));
+//								contentStream.showText(stringBuilder.toString().replaceAll("[\\r\\n]", ""));
+//								contentStream.newLineAtOffset(0, -15);
+//							}
+							/**
+							 * 
+							 * TRYING NEW ALG
+							 * 
+							 * 
+							 */
 
 							// QUESTION TEXT
 							String[] wrappedText = WordUtils.wrap(question, 55).split("\\r?\\n");
@@ -575,13 +737,13 @@ public class MainWindow {
 							// QUESTION CHOICES write index ABCDE
 							for (int k = 0; k < choicesForQuestion.size(); k++) {
 								contentStream.setFont(PDType0Font.load(document,
-										ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 9);
+										ResourceHelper.getResourceAsStream(fontFilePathArimoBold)), 9);
 								contentStream.showText((char) ('A' + k) + ") ");
 
 								// check choice's lenght, write text
 								String[] wrappedChoice = WordUtils.wrap(choicesForQuestion.get(k), 55).split("\\r?\\n");
 								contentStream.setFont(PDType0Font.load(document,
-										ResourceHelper.getResourceAsStream(fontFilePathArial)), 9);
+										ResourceHelper.getResourceAsStream(fontFilePathArimo)), 9);
 								for (int o = 0; o < wrappedChoice.length; o++) {
 									contentStream.showText(wrappedChoice[o]);
 									contentStream.newLineAtOffset(0, -15); // Add a space before moving to a new line
@@ -597,7 +759,7 @@ public class MainWindow {
 				// Add page number
 				contentStream.beginText();
 				contentStream.setFont(
-						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)), 11);
+						PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArimoBold)), 11);
 				float centerX = (page.getMediaBox().getWidth() / 2) - 3;
 				float centerY = headerYStart - tableHeight - 20;
 				contentStream.newLineAtOffset(centerX, centerY);
@@ -649,7 +811,7 @@ public class MainWindow {
 		float yStart = answerKeyPage.getMediaBox().getHeight() - margin;
 
 		contentStream.beginText();
-		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArialBold)),
+		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArimoBold)),
 				11);
 		contentStream.newLineAtOffset(margin, yStart);
 		contentStream.showText("Answers");
@@ -662,7 +824,7 @@ public class MainWindow {
 		int numRows = (int) Math.ceil((double) answerKeys.size() / numColumns);
 
 		float columnWidth = tableWidth / numColumns;
-		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArial)), 9);
+		contentStream.setFont(PDType0Font.load(document, ResourceHelper.getResourceAsStream(fontFilePathArimo)), 9);
 		// Draw table content
 		for (int i = 0; i < numRows; i++) {
 			for (int j = 0; j < numColumns; j++) {
