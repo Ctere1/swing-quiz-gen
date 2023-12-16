@@ -62,12 +62,29 @@ import javax.swing.JMenu;
 import javax.swing.SwingConstants;
 import javax.swing.JMenuItem;
 
-import org.apache.poi.xwpf.usermodel.BreakType;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
 import java.awt.SystemColor;
 import javax.swing.border.EtchedBorder;
+
+import com.spire.doc.Document;
+import com.spire.doc.FieldType;
+import com.spire.doc.FileFormat;
+import com.spire.doc.HeaderFooter;
+import com.spire.doc.Section;
+import com.spire.doc.Table;
+import com.spire.doc.TableCell;
+import com.spire.doc.TableRow;
+import com.spire.doc.documents.BorderStyle;
+import com.spire.doc.documents.BreakType;
+import com.spire.doc.documents.HorizontalAlignment;
+import com.spire.doc.documents.ListStyle;
+import com.spire.doc.documents.ListType;
+import com.spire.doc.documents.PageSize;
+import com.spire.doc.documents.Paragraph;
+import com.spire.doc.documents.ParagraphStyle;
+import com.spire.doc.documents.RowAlignment;
+import com.spire.doc.documents.Style;
+import com.spire.doc.documents.TextAlignment;
+import com.spire.doc.fields.TextRange;
 
 public class MainWindow {
 
@@ -358,6 +375,7 @@ public class MainWindow {
 
 		// Question Area
 		questionArea = new JTextPane();
+		questionArea.setContentType("text/plain");
 		questionArea.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null), "Question",
 				TitledBorder.LEADING, TitledBorder.TOP, null, new Color(255, 200, 0)));
 		questionAreaScrollPane = new JScrollPane(questionArea);
@@ -645,50 +663,148 @@ public class MainWindow {
 	private void generateWordDocument() {
 		try {
 			topic = topicField.getText();
-			XWPFDocument document = new XWPFDocument();
+			Document document = new Document();
+			ListStyle listStyle = new ListStyle(document, ListType.Numbered);
+			document.getListStyles().add(listStyle);
 
-			for (int questionIndex = 0; questionIndex < questions.size(); questionIndex++) {
-				String question = questions.get(questionIndex);
-				List<String> choicesForQuestion = choices.get(questionIndex);
+			Section sec = document.addSection();
+			sec.getPageSetup().setPageSize(PageSize.A4);
+			// Get header and footer from a section
+			HeaderFooter header = sec.getHeadersFooters().getHeader();
+			HeaderFooter footer = sec.getHeadersFooters().getFooter();
 
-				// Add question to document
-				XWPFParagraph paragraph = document.createParagraph();
-				XWPFRun run = paragraph.createRun();
-				run.setBold(true);
-				run.setText((questionIndex + 1) + ")");
-				run.setBold(false);
-				run.addBreak();
+			// Add a paragraph to the header
+			Paragraph headerParagraph = header.addParagraph();
+			// Add text to the header paragraph
+			TextRange text = headerParagraph.appendText(topic);
+			text.getCharacterFormat().setFontName("Arial");
+			text.getCharacterFormat().setFontSize(12);
+			text.getCharacterFormat().setItalic(true);
+			headerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
 
-				run.setText(question);
+			// Set the bottom border style of the header paragraph
+			headerParagraph.getFormat().getBorders().getBottom().setBorderType(BorderStyle.Single);
+			headerParagraph.getFormat().getBorders().getBottom().setLineWidth(1f);
 
-				// Add choices to document
-				for (int choiceIndex = 0; choiceIndex < choicesForQuestion.size(); choiceIndex++) {
-					paragraph = document.createParagraph();
-					run = paragraph.createRun();
-					run.setText((char) ('A' + choiceIndex) + ") " + choicesForQuestion.get(choiceIndex));
+			// Add a paragraph to the footer
+			Paragraph footerParagraph = footer.addParagraph();
+			// Add Field_Page and Field_Num_Pages fields to the footer paragraph
+			footerParagraph.appendField("Page Number", FieldType.Field_Page);
+//			footerParagraph.appendText(" of ");
+//			footerParagraph.appendField("Number of Pages", FieldType.Field_Num_Pages);
+			footerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+
+			// Set the top border style of the footer paragraph
+//			footerParagraph.getFormat().getBorders().getTop().setBorderType(BorderStyle.Single);
+//			footerParagraph.getFormat().getBorders().getTop().setLineWidth(1f);
+
+			int questionCount = questions.size();
+			int questionIndex = 0;
+			int questionColumn = 2;
+			int questionRow = 3;
+			int pageCount = (int) Math.ceil((double) questionCount / (questionRow * questionColumn));
+
+			// Questions PAGE
+			for (int pageIdx = 0; pageIdx < pageCount; pageIdx++) {
+				// Add a section
+				if (pageIdx != 0) {
+					sec = document.addSection();
 				}
-				run.addBreak();
+
+				// Create a table
+				Table table = sec.addTable(false);
+				table.getTableFormat().getBorders().getVertical().setBorderType(BorderStyle.Basic_Thin_Lines);
+				table.getTableFormat().getPaddings().setRight(10f);
+
+				table.getTableFormat().getBorders().getVertical().setLineWidth(0.5f);
+				table.getTableFormat().getPositioning().setVertPosition(60f);
+				table.resetCells(questionRow, questionColumn);
+
+				// table.getTableFormat().getPositioning().setVertRelationTo(VerticalRelation.Margin);
+				// table.getTableFormat().getPositioning().setVertPositionAbs(VerticalPosition.Bottom);
+				// table.getTableFormat().getPositioning().setHorizPositionAbs(HorizontalPosition.Center);
+				// table.getTableFormat().getPositioning().setDistanceFromBottom(500f);
+				// table.getTableFormat().setCellSpacing(100f);
+				// table.getTableFormat().setLayoutType(LayoutType.Fixed);
+
+				// Questions COLUMN
+				for (int i = 0; i < questionColumn; i++) {
+
+					// Questions ROW
+					for (int j = 0; j < questionRow; j++) {
+						if (j == 1 || j == 4) {
+
+							// ____________
+							// |j=0 | j=3 |
+							// |____|_____|
+							// |j=1 | j=4 |
+							// |____|_____|
+							// |j=2 | j=5 |
+							// |____|_____|
+
+							// Skipping this two ^^^^
+
+							continue;
+						}
+
+//						int questionIndex = (pageIdx * questionColumn * questionRow) + (i * questionRow) + j;
+
+						if (questionIndex < questionCount) {
+
+							String question = questions.get(questionIndex);
+							List<String> choicesForQuestion = choices.get(questionIndex);
+
+							TableRow row = table.getRows().get(j);
+							Paragraph paragraph = row.getCells().get(i).addParagraph();
+
+							// Check if the style already exists
+							Style style = table.getDocument().getStyles().findByName("titleStyle");
+							if (style == null) {
+								// Create the style if it doesn't exist
+								style = new ParagraphStyle(table.getDocument());
+								style.setName("titleStyle");
+								// style.getCharacterFormat().setTextColor(Color.BLUE);
+								style.getCharacterFormat().setFontName("Arial");
+								style.getCharacterFormat().setFontSize(9f);
+								table.getDocument().getStyles().add(style);
+							}
+
+							paragraph.applyStyle("titleStyle");
+							paragraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Justify);
+							paragraph.getFormat().setFirstLineIndent(0);
+							// Set paragraph after spacing
+							paragraph.getFormat().setAfterSpacing(10f);
+							// Set line spacing
+							paragraph.getFormat().setLineSpacing(15f);
+
+							paragraph.appendText((questionIndex + 1) + ".").getCharacterFormat().setBold(true);
+							paragraph.appendBreak(BreakType.Line_Break);
+
+							paragraph.appendText(question);
+							paragraph.appendBreak(BreakType.Line_Break);
+
+							// Questions CHOICES
+							for (int k = 0; k < choicesForQuestion.size(); k++) {
+								paragraph.appendText((char) ('A' + k) + ") ").getCharacterFormat().setBold(true);
+								paragraph.appendText(choicesForQuestion.get(k));
+								paragraph.appendBreak(BreakType.Line_Break);
+							}
+							questionIndex++;
+						}
+					}
+				}
 			}
 
-			// Add page break before the inserting answers
-			XWPFParagraph paragraph = document.createParagraph();
-			XWPFRun run = paragraph.createRun();
-			run.addBreak(BreakType.PAGE);
 			addAnswerKeyPage(document);
-
 			// Save the Word document
-			String docxFileName = topic + ".docx";
-
-			File docxFile = new File(docxFileName);
-			int fileCount = 1;
-			while (docxFile.exists()) {
-				docxFileName = topic + "_" + fileCount + ".docx";
-				docxFile = new File(docxFileName);
-				fileCount++;
-			}
+			String docxFileName = topic + "_.docx";
+			// String pdfFileName = topic + "_.pdf";
 
 			try (FileOutputStream out = new FileOutputStream(docxFileName)) {
-				document.write(out);
+				// Save the result document
+				document.saveToFile(docxFileName, FileFormat.Docx_2013);
+				// document.saveToFile(pdfFileName);
+
 				JOptionPane.showMessageDialog(mainFrame, "Word Document Generated: " + docxFileName, "Info",
 						JOptionPane.INFORMATION_MESSAGE);
 			}
@@ -700,26 +816,45 @@ public class MainWindow {
 		}
 	}
 
-	private void addAnswerKeyPage(XWPFDocument document) throws IOException {
-		XWPFParagraph paragraph = document.createParagraph();
-		setBoldText(paragraph.createRun(), "Answers", 14);
+	private void addAnswerKeyPage(Document document) throws IOException {
+		// Add a section
+		Section section = document.addSection();
+		section.getPageSetup().setPageSize(PageSize.A4);
 
+//		section.getHeadersFooters().getHeader().getLastChild().close();
+//		section.getHeadersFooters().getFooter().getLastChild().close();
+
+		Paragraph paragraph = section.addParagraph();
+		paragraph.appendBreak(BreakType.Line_Break);
+		paragraph.appendText("Answers");
+		paragraph.appendBreak(BreakType.Line_Break);
+
+		// Create a table with one row and as many columns as there are answers
+		Table table = section.addTable(true);
+		table.resetCells(2, 10);
+		table.getTableFormat().setHorizontalAlignment(RowAlignment.Center);
+
+		// Populate the table with answers
+		TableRow indexRow = table.getRows().get(0);
 		for (int i = 0; i < answerKeys.size(); i++) {
-			XWPFParagraph answerParagraph = document.createParagraph();
-			setNormalText(answerParagraph.createRun(), (i + 1) + "-) " + answerKeys.get(i), 12);
+			TableCell indexCell = indexRow.getCells().get(i);
+			Paragraph indexParagraph = indexCell.addParagraph();
+			indexParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+			indexParagraph.getFormat().setTextAlignment(TextAlignment.Center);
+			indexParagraph.appendText((i + 1) + "");
+
 		}
-	}
 
-	private void setBoldText(XWPFRun run, String text, int fontSize) {
-		run.setText(text);
-		run.setBold(true);
-		run.setFontSize(fontSize);
-	}
+		// Populate the inner table with answer keys in the second row
+		TableRow answerRow = table.getRows().get(1);
+		for (int i = 0; i < answerKeys.size(); i++) {
+			TableCell answerCell = answerRow.getCells().get(i);
+			Paragraph answerParagraph = answerCell.addParagraph();
+			answerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+			answerParagraph.getFormat().setTextAlignment(TextAlignment.Center);
+			answerParagraph.appendText(answerKeys.get(i));
 
-	private void setNormalText(XWPFRun run, String text, int fontSize) {
-		run.setText(text);
-		run.setBold(false);
-		run.setFontSize(fontSize);
+		}
 	}
 
 	private void generatePdf() {
@@ -729,7 +864,9 @@ public class MainWindow {
 			PDDocument document = new PDDocument();
 
 			int questionCount = questions.size();
-			int pageCount = (int) Math.ceil((double) questionCount / 4); // Page number
+			int questionColumn = 2;
+			int questionRow = 2;
+			int pageCount = (int) Math.ceil((double) questionCount / (questionRow * questionColumn));
 
 			for (int pageIdx = 0; pageIdx < pageCount; pageIdx++) {
 				PDPage page = new PDPage(PDRectangle.A4);
@@ -770,12 +907,12 @@ public class MainWindow {
 				headerYPosition -= 15;
 
 				// Draw the content
-				for (int i = 0; i < 2; i++) {
+				for (int i = 0; i < questionColumn; i++) {
 					float nextXStart = margin + (tableWidth / 2) * i;
 
 					// Questions
-					for (int j = 0; j < 2; j++) {
-						int questionIndex = pageIdx * 4 + i * 2 + j;
+					for (int j = 0; j < questionRow; j++) {
+						int questionIndex = (pageIdx * questionColumn * questionRow) + (i * questionRow) + j;
 						if (questionIndex < questionCount) {
 							String question = questions.get(questionIndex);
 							List<String> choicesForQuestion = choices.get(questionIndex);
