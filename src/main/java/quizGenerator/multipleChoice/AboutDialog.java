@@ -19,12 +19,12 @@ public class AboutDialog extends JDialog {
 
 		JLabel imageLabel = new JLabel(scaledIcon);
 
-		JLabel label = new JLabel(
-				"<html><center>Quiz Generator<br>Version " + version + "<br>Developed by Cemil Tan</center></html>");
+		JLabel label = new JLabel("<html><center><b>Quiz Generator</b><br>Version " + version
+				+ "<br>Developed by Cemil Tan</center></html>");
 		label.setHorizontalAlignment(SwingConstants.CENTER);
 
 		JPanel panel = new JPanel(new BorderLayout());
-		panel.add(imageLabel, BorderLayout.NORTH); // Resmi ekleyin
+		panel.add(imageLabel, BorderLayout.NORTH);
 		panel.add(label, BorderLayout.CENTER);
 
 		getContentPane().add(panel);

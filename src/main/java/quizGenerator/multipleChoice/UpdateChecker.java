@@ -20,7 +20,7 @@ public class UpdateChecker extends JFrame {
 
 	private static final String REPO_OWNER = "Ctere1";
 	private static final String REPO_NAME = "swing-quiz-gen";
-	protected static final String CURRENT_VERSION = "v0.0.6";
+	protected static final String CURRENT_VERSION = "v0.0.7";
 	private JLabel resultLabel;
 
 	public UpdateChecker() {
@@ -53,8 +53,10 @@ public class UpdateChecker extends JFrame {
 				if (isNewVersionAvailable(CURRENT_VERSION, latestVersion)) {
 					promptForUpdate(parentComponent);
 				} else {
-					JOptionPane.showMessageDialog(parentComponent,
-							"No updates available.\nCurrent version: " + CURRENT_VERSION, "Update Check",
+					JLabel messageLabel = new JLabel(
+							"<html>No updates available.<br>Current version: " + CURRENT_VERSION + "</html>");
+					// messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+					JOptionPane.showMessageDialog(parentComponent, messageLabel, "Update Check",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
