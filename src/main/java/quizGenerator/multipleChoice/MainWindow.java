@@ -10,6 +10,8 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -164,14 +166,20 @@ public class MainWindow {
 		choices = new ArrayList<>();
 		// MAIN FRAME
 		mainFrame = new JFrame("Quiz Generator");
-		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		mainFrame.setSize(400, 300);
 		mainFrame.setSize(1000, 600);
 		mainFrame.setMinimumSize(new Dimension(800, 500));
-		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setLocationRelativeTo(null);
 		mainFrame.getRootPane().putClientProperty("JRootPane.titleBarShowIcon", true);
 		mainFrame.getRootPane().putClientProperty("JRootPane.titleBarBackground", Color.DARK_GRAY);
+
+		mainFrame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				onCloseButtonClick();
+			}
+		});
 
 		try {
 			Image iconImage = ImageIO.read(ResourceHelper.getResourceAsStream("file.png"));
@@ -548,6 +556,17 @@ public class MainWindow {
 		if (loadingDialog != null) {
 			loadingDialog.dispose();
 			loadingDialog.setVisible(false);
+		}
+	}
+
+	private void onCloseButtonClick() {
+		// Show a confirmation dialog
+		int response = JOptionPane.showConfirmDialog(mainFrame, "Are you sure you want to close the application?",
+				"Confirmation", JOptionPane.OK_CANCEL_OPTION);
+
+		// If the user clicks OK, dispose of the main frame (close the application)
+		if (response == JOptionPane.OK_OPTION) {
+			mainFrame.dispose();
 		}
 	}
 
