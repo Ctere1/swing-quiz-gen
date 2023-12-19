@@ -60,6 +60,8 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.JMenuItem;
 
 import java.awt.SystemColor;
@@ -77,8 +79,6 @@ import com.spire.doc.TableRow;
 import com.spire.doc.documents.BorderStyle;
 import com.spire.doc.documents.BreakType;
 import com.spire.doc.documents.HorizontalAlignment;
-import com.spire.doc.documents.ListStyle;
-import com.spire.doc.documents.ListType;
 import com.spire.doc.documents.PageSize;
 import com.spire.doc.documents.Paragraph;
 import com.spire.doc.documents.ParagraphStyle;
@@ -135,6 +135,8 @@ public class MainWindow {
 	private JToolBar toolBar;
 	private JMenuItem mntmLanguageMenuItemTurkish;
 	private JMenuItem mntmLanguageMenuItemEnglish;
+
+	private LoadingDialog loadingDialog;
 
 	/**
 	 * Create the application.
@@ -260,16 +262,52 @@ public class MainWindow {
 		toolsMenu.add(mntmGenerateDocxMenuItem);
 
 		mntmGenerateDocxMenuItem.addActionListener(new ActionListener() {
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				generateWordDocument();
+				// Show loading screen
+				SwingUtilities.invokeLater(() -> showLoadingScreen());
+
+				// Use SwingWorker to run the document generation in the background
+				SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+					@Override
+					protected Void doInBackground() throws Exception {
+						generateWordDocument();
+						return null;
+					}
+
+					@Override
+					protected void done() {
+						// Hide loading screen when the document generation is complete
+						SwingUtilities.invokeLater(() -> hideLoadingScreen());
+					}
+				};
+
+				worker.execute();
 			}
 		});
 
 		mntmGeneratePDFMenuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				generatePdf();
+				// Show loading screen
+				SwingUtilities.invokeLater(() -> showLoadingScreen());
+
+				// Use SwingWorker to run the document generation in the background
+				SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+					@Override
+					protected Void doInBackground() throws Exception {
+						generatePdf();
+						return null;
+					}
+
+					@Override
+					protected void done() {
+						// Hide loading screen when the document generation is complete
+						SwingUtilities.invokeLater(() -> hideLoadingScreen());
+					}
+				};
+				worker.execute();
 			}
 		});
 
@@ -331,7 +369,24 @@ public class MainWindow {
 		mntmUpdateMenuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				performUpdateCheck();
+				// Show loading screen
+				SwingUtilities.invokeLater(() -> showLoadingScreen());
+
+				// Use SwingWorker to run the document generation in the background
+				SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+					@Override
+					protected Void doInBackground() throws Exception {
+						performUpdateCheck();
+						return null;
+					}
+
+					@Override
+					protected void done() {
+						// Hide loading screen when the document generation is complete
+						SwingUtilities.invokeLater(() -> hideLoadingScreen());
+					}
+				};
+				worker.execute();
 			}
 		});
 
@@ -481,6 +536,19 @@ public class MainWindow {
 			LanguageSelection.setLocale(selectedLanguage);
 		}
 
+	}
+
+	private void showLoadingScreen() {
+		loadingDialog = new LoadingDialog(mainFrame);
+		loadingDialog.setVisible(true);
+
+	}
+
+	private void hideLoadingScreen() {
+		if (loadingDialog != null) {
+			loadingDialog.dispose();
+			loadingDialog.setVisible(false);
+		}
 	}
 
 	private void addToolbarButtons() {
@@ -679,8 +747,6 @@ public class MainWindow {
 			topic = topicField.getText();
 			author = authorField.getText();
 			Document document = new Document();
-			ListStyle listStyle = new ListStyle(document, ListType.Numbered);
-			document.getListStyles().add(listStyle);
 
 			Section sec = document.addSection();
 			sec.getPageSetup().setPageSize(PageSize.A4);
@@ -746,16 +812,13 @@ public class MainWindow {
 			pageField.getCharacterFormat().setFontName("TimesNewRoman");
 			pageField.getCharacterFormat().setFontSize(9);
 			footerParagraph1.getFormat().setHorizontalAlignment(HorizontalAlignment.Right);
-			// Add text to the footer paragraph
-			TextRange text2 = headerParagraph.appendText(topic);
-			text2.getCharacterFormat().setFontName("TimesNewRoman");
-			text2.getCharacterFormat().setFontSize(9);
 
 			footerRow1.setHeight(5.75f); // 0,2 cm -->0.75f == 0,02 cm
 			footerRow1.setHeightType(TableRowHeightType.Exactly);
 			footerRow1.getCells().get(0).getCellFormat().setBackColor(new Color(220, 220, 220));
 			footerRow1.getCells().get(1).getCellFormat().setBackColor(new Color(220, 220, 220));
 
+			// Add text to the footer paragraph
 			footerParagraph2.getFormat().setHorizontalAlignment(HorizontalAlignment.Left);
 			TextRange footerText = footerParagraph2.appendText(author);
 			footerText.getCharacterFormat().setFontName("TimesNewRoman");
@@ -829,21 +892,27 @@ public class MainWindow {
 
 							questionTextParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Justify);
 							questionTextParagraph.getFormat().setLeftIndent(-5.7f); // 0,2cm
-							questionTextParagraph.getFormat().setRightIndent(-5.7f); // 0,2cm
+							questionTextParagraph.getFormat().setRightIndent(-5.7f); // - 0,2cm
 							questionTextParagraph.getFormat().setFirstLineIndent(0);
 							// Set paragraph after spacing
 							questionTextParagraph.getFormat().setAfterSpacing(6f); // 6pt
 							// Set line spacing
 							questionTextParagraph.getFormat().setLineSpacing(13.8f); // 1,15
 							questionTextParagraph.appendText(question);
-							questionTextParagraph.appendText("\n");
 
+							Paragraph questionChoiceParagraph = row.getCells().get(1).addParagraph();
 							// Questions CHOICES
 							for (int k = 0; k < choicesForQuestion.size(); k++) {
-								questionTextParagraph.appendText((char) ('A' + k) + ") ");
-								questionTextParagraph.getFormat().setLeftIndent(-5.7f);
-								questionTextParagraph.appendText(choicesForQuestion.get(k));
-								questionTextParagraph.appendText("\n");
+
+								questionChoiceParagraph.applyStyle("questionsStyle");
+								questionChoiceParagraph.getFormat().setLineSpacing(13.8f); // 1,15
+								questionChoiceParagraph.getFormat().setAfterSpacing(6f); // 6pt
+								questionChoiceParagraph.getFormat().setLeftIndent(-5.7f); // -0,2cm
+
+								questionChoiceParagraph.appendText((char) ('A' + k) + ") ");
+								questionChoiceParagraph.appendText(choicesForQuestion.get(k));
+								questionChoiceParagraph = row.getCells().get(1).addParagraph();
+
 							}
 							questionIndex++;
 						}
