@@ -65,6 +65,7 @@ import javax.swing.JMenuItem;
 import java.awt.SystemColor;
 import javax.swing.border.EtchedBorder;
 
+import com.spire.doc.AutoFitBehaviorType;
 import com.spire.doc.Document;
 import com.spire.doc.FieldType;
 import com.spire.doc.FileFormat;
@@ -83,7 +84,9 @@ import com.spire.doc.documents.Paragraph;
 import com.spire.doc.documents.ParagraphStyle;
 import com.spire.doc.documents.RowAlignment;
 import com.spire.doc.documents.Style;
+import com.spire.doc.documents.TableRowHeightType;
 import com.spire.doc.documents.TextAlignment;
+import com.spire.doc.fields.Field;
 import com.spire.doc.fields.TextRange;
 
 public class MainWindow {
@@ -96,6 +99,7 @@ public class MainWindow {
 	protected static JScrollPane questionScrollPane;
 	private JScrollPane questionAreaScrollPane;
 	protected static JTextField topicField;
+	protected static JTextField authorField;
 	private List<JTextField> choiceFields;
 	protected static JButton addQuestionButton;
 	protected static JButton resetButton;
@@ -104,6 +108,8 @@ public class MainWindow {
 	protected static JButton copyButton;
 	protected static JButton cutButton;
 	private String topic;
+	private String author;
+	protected static String answersString = "Answers";
 
 	private List<String> questions;
 	private List<String> answerKeys;
@@ -443,6 +449,14 @@ public class MainWindow {
 				TitledBorder.LEADING, TitledBorder.TOP, null, new Color(255, 200, 0)));
 		middlePanel.add(textField_4);
 
+		// AUTHOR
+		authorField = new JTextField(14);
+		sl_middlePanel.putConstraint(SpringLayout.NORTH, authorField, 0, SpringLayout.NORTH, topicField);
+		sl_middlePanel.putConstraint(SpringLayout.WEST, authorField, 0, SpringLayout.WEST, answerComboBox);
+		authorField.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null), "Author",
+				TitledBorder.LEADING, TitledBorder.TOP, null, new Color(255, 200, 0)));
+		middlePanel.add(authorField);
+
 		JPanel mainPanel = new JPanel(new BorderLayout(25, 25));
 		mainPanel.add(leftPanel, BorderLayout.WEST);
 		mainPanel.add(middlePanel, BorderLayout.CENTER);
@@ -663,40 +677,96 @@ public class MainWindow {
 	private void generateWordDocument() {
 		try {
 			topic = topicField.getText();
+			author = authorField.getText();
 			Document document = new Document();
 			ListStyle listStyle = new ListStyle(document, ListType.Numbered);
 			document.getListStyles().add(listStyle);
 
 			Section sec = document.addSection();
 			sec.getPageSetup().setPageSize(PageSize.A4);
+			sec.getPageSetup().getMargins().setTop(56.75f); // 2cm
+			sec.getPageSetup().getMargins().setBottom(56.75f);// 2cm
+			sec.getPageSetup().getMargins().setLeft(71f); // 2.5cm
+			sec.getPageSetup().getMargins().setRight(56.75f);// 2cm
 			// Get header and footer from a section
 			HeaderFooter header = sec.getHeadersFooters().getHeader();
 			HeaderFooter footer = sec.getHeadersFooters().getFooter();
 
-			// Add a paragraph to the header
-			Paragraph headerParagraph = header.addParagraph();
+			// Add a Header
+			Table headerTable1 = header.addTable(false);
+			headerTable1.resetCells(1, 2);
+			headerTable1.getTableFormat().getBorders().getRight().setBorderType(BorderStyle.Outset);
+			headerTable1.getTableFormat().getBorders().getLeft().setBorderType(BorderStyle.Outset);
+			headerTable1.getTableFormat().getBorders().getTop().setBorderType(BorderStyle.Outset);
+			headerTable1.getTableFormat().getBorders().getHorizontal().setBorderType(BorderStyle.Outset);
+
+			headerTable1.getTableFormat().getBorders().getRight().setLineWidth(0.2f); // 1/4 pt
+			headerTable1.getTableFormat().getBorders().getLeft().setLineWidth(0.2f); // 1/4 pt
+			headerTable1.getTableFormat().getBorders().getTop().setLineWidth(0.2f); // 1/4 pt
+			headerTable1.getTableFormat().getBorders().getHorizontal().setLineWidth(0.2f); // 1/4 pt
+
+			headerTable1.getTableFormat().getPaddings().setAll(6f);
+
+			Table headerTable2 = header.addTable(false);
+			headerTable2.resetCells(1, 2);
+
+			TableRow headerRow1 = headerTable1.getRows().get(0);
+			TableRow headerRow2 = headerTable2.getRows().get(0);
+
+			Paragraph headerParagraph = headerRow1.getCells().get(0).addParagraph();
 			// Add text to the header paragraph
 			TextRange text = headerParagraph.appendText(topic);
-			text.getCharacterFormat().setFontName("Arial");
-			text.getCharacterFormat().setFontSize(12);
-			text.getCharacterFormat().setItalic(true);
-			headerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+			text.getCharacterFormat().setFontName("TimesNewRoman");
+			text.getCharacterFormat().setFontSize(11);
 
-			// Set the bottom border style of the header paragraph
-			headerParagraph.getFormat().getBorders().getBottom().setBorderType(BorderStyle.Single);
-			headerParagraph.getFormat().getBorders().getBottom().setLineWidth(1f);
+			headerRow2.setHeight(5.75f); // 0,2 cm -->0.75f == 0,02 cm
+			headerRow2.setHeightType(TableRowHeightType.Exactly);
+			headerRow2.getCells().get(0).getCellFormat().setBackColor(new Color(220, 220, 220));
+			headerRow2.getCells().get(1).getCellFormat().setBackColor(new Color(220, 220, 220));
+			// Add a break line after the table (addParagraph() will add break)
+			Paragraph breakLineParagraph = header.addParagraph();
 
-			// Add a paragraph to the footer
-			Paragraph footerParagraph = footer.addParagraph();
+			// Add a Footer
+			Table footerTable1 = footer.addTable(false);
+			footerTable1.resetCells(1, 2);
+
+			Table footerTable2 = footer.addTable(false);
+			footerTable2.resetCells(1, 2);
+			footerTable2.getTableFormat().getPaddings().setAll(6f);
+
+			TableRow footerRow1 = footerTable1.getRows().get(0);
+			TableRow footerRow2 = footerTable2.getRows().get(0);
+
+			Paragraph footerParagraph1 = footerRow2.getCells().get(1).addParagraph();
+			Paragraph footerParagraph2 = footerRow2.getCells().get(0).addParagraph();
 			// Add Field_Page and Field_Num_Pages fields to the footer paragraph
-			footerParagraph.appendField("Page Number", FieldType.Field_Page);
+			Field pageField = footerParagraph1.appendField("Page Number", FieldType.Field_Page);
 //			footerParagraph.appendText(" of ");
 //			footerParagraph.appendField("Number of Pages", FieldType.Field_Num_Pages);
-			footerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+			pageField.getCharacterFormat().setFontName("TimesNewRoman");
+			pageField.getCharacterFormat().setFontSize(9);
+			footerParagraph1.getFormat().setHorizontalAlignment(HorizontalAlignment.Right);
+			// Add text to the footer paragraph
+			TextRange text2 = headerParagraph.appendText(topic);
+			text2.getCharacterFormat().setFontName("TimesNewRoman");
+			text2.getCharacterFormat().setFontSize(9);
 
-			// Set the top border style of the footer paragraph
-//			footerParagraph.getFormat().getBorders().getTop().setBorderType(BorderStyle.Single);
-//			footerParagraph.getFormat().getBorders().getTop().setLineWidth(1f);
+			footerRow1.setHeight(5.75f); // 0,2 cm -->0.75f == 0,02 cm
+			footerRow1.setHeightType(TableRowHeightType.Exactly);
+			footerRow1.getCells().get(0).getCellFormat().setBackColor(new Color(220, 220, 220));
+			footerRow1.getCells().get(1).getCellFormat().setBackColor(new Color(220, 220, 220));
+
+			footerParagraph2.getFormat().setHorizontalAlignment(HorizontalAlignment.Left);
+			TextRange footerText = footerParagraph2.appendText(author);
+			footerText.getCharacterFormat().setFontName("TimesNewRoman");
+			footerText.getCharacterFormat().setAllCaps(true);
+			footerText.getCharacterFormat().setTextColor(new Color(130, 130, 130));
+			footerText.getCharacterFormat().setFontSize(9);
+
+			// Adjust the header distance
+			sec.getPageSetup().setHeaderDistance(35.5f); // 1,25 cm
+			// Adjust the footer distance
+			sec.getPageSetup().setFooterDistance(35.5f); // 1,25 cm
 
 			int questionCount = questions.size();
 			int questionIndex = 0;
@@ -709,85 +779,71 @@ public class MainWindow {
 				// Add a section
 				if (pageIdx != 0) {
 					sec = document.addSection();
+					// Adjust the header distance
+					sec.getPageSetup().setHeaderDistance(35.5f); // 1,25 cm
+					// Adjust the footer distance
+					sec.getPageSetup().setFooterDistance(35.5f); // 1,25 cm
 				}
 
 				// Create a table
 				Table table = sec.addTable(false);
-				table.getTableFormat().getBorders().getVertical().setBorderType(BorderStyle.Basic_Thin_Lines);
-				table.getTableFormat().getPaddings().setRight(10f);
-
-				table.getTableFormat().getBorders().getVertical().setLineWidth(0.5f);
-				table.getTableFormat().getPositioning().setVertPosition(60f);
+				table.getTableFormat().getBorders().getVertical().setBorderType(BorderStyle.Outset);
+				table.getTableFormat().getBorders().getVertical().setLineWidth(0.2f); // It doesn't affect !!
 				table.resetCells(questionRow, questionColumn);
-
-				// table.getTableFormat().getPositioning().setVertRelationTo(VerticalRelation.Margin);
-				// table.getTableFormat().getPositioning().setVertPositionAbs(VerticalPosition.Bottom);
-				// table.getTableFormat().getPositioning().setHorizPositionAbs(HorizontalPosition.Center);
-				// table.getTableFormat().getPositioning().setDistanceFromBottom(500f);
-				// table.getTableFormat().setCellSpacing(100f);
-				// table.getTableFormat().setLayoutType(LayoutType.Fixed);
 
 				// Questions COLUMN
 				for (int i = 0; i < questionColumn; i++) {
-
 					// Questions ROW
 					for (int j = 0; j < questionRow; j++) {
-						if (j == 1 || j == 4) {
-
-							// ____________
-							// |j=0 | j=3 |
-							// |____|_____|
-							// |j=1 | j=4 |
-							// |____|_____|
-							// |j=2 | j=5 |
-							// |____|_____|
-
-							// Skipping this two ^^^^
-
-							continue;
-						}
-
-//						int questionIndex = (pageIdx * questionColumn * questionRow) + (i * questionRow) + j;
-
 						if (questionIndex < questionCount) {
+
+							Table nestedTable = table.get(j, i).addTable();
+							nestedTable.resetCells(1, 2);
+							nestedTable.autoFit(AutoFitBehaviorType.Auto_Fit_To_Contents);
 
 							String question = questions.get(questionIndex);
 							List<String> choicesForQuestion = choices.get(questionIndex);
 
-							TableRow row = table.getRows().get(j);
-							Paragraph paragraph = row.getCells().get(i).addParagraph();
+							TableRow row = nestedTable.getRows().get(0);
+							Paragraph questionNumberParagraph = row.getCells().get(0).addParagraph();
+							Paragraph questionTextParagraph = row.getCells().get(1).addParagraph();
 
 							// Check if the style already exists
-							Style style = table.getDocument().getStyles().findByName("titleStyle");
+							Style style = nestedTable.getDocument().getStyles().findByName("questionsStyle");
 							if (style == null) {
 								// Create the style if it doesn't exist
-								style = new ParagraphStyle(table.getDocument());
-								style.setName("titleStyle");
-								// style.getCharacterFormat().setTextColor(Color.BLUE);
-								style.getCharacterFormat().setFontName("Arial");
+								style = new ParagraphStyle(nestedTable.getDocument());
+								style.setName("questionsStyle");
+								style.getCharacterFormat().setFontName("TimesNewRoman");
 								style.getCharacterFormat().setFontSize(9f);
-								table.getDocument().getStyles().add(style);
+								nestedTable.getDocument().getStyles().add(style);
 							}
 
-							paragraph.applyStyle("titleStyle");
-							paragraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Justify);
-							paragraph.getFormat().setFirstLineIndent(0);
+							questionTextParagraph.applyStyle("questionsStyle");
+							questionNumberParagraph.applyStyle("questionsStyle");
+
+							questionNumberParagraph.getFormat().setFirstLineIndent(0);
+							questionNumberParagraph.getFormat().setLeftIndent(-5.7f); // 0,2cm
+							questionNumberParagraph.appendText((questionIndex + 1) + ".").getCharacterFormat()
+									.setBold(true);
+
+							questionTextParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Justify);
+							questionTextParagraph.getFormat().setLeftIndent(-5.7f); // 0,2cm
+							questionTextParagraph.getFormat().setRightIndent(-5.7f); // 0,2cm
+							questionTextParagraph.getFormat().setFirstLineIndent(0);
 							// Set paragraph after spacing
-							paragraph.getFormat().setAfterSpacing(10f);
+							questionTextParagraph.getFormat().setAfterSpacing(6f); // 6pt
 							// Set line spacing
-							paragraph.getFormat().setLineSpacing(15f);
-
-							paragraph.appendText((questionIndex + 1) + ".").getCharacterFormat().setBold(true);
-							paragraph.appendBreak(BreakType.Line_Break);
-
-							paragraph.appendText(question);
-							paragraph.appendBreak(BreakType.Line_Break);
+							questionTextParagraph.getFormat().setLineSpacing(13.8f); // 1,15
+							questionTextParagraph.appendText(question);
+							questionTextParagraph.appendText("\n");
 
 							// Questions CHOICES
 							for (int k = 0; k < choicesForQuestion.size(); k++) {
-								paragraph.appendText((char) ('A' + k) + ") ").getCharacterFormat().setBold(true);
-								paragraph.appendText(choicesForQuestion.get(k));
-								paragraph.appendBreak(BreakType.Line_Break);
+								questionTextParagraph.appendText((char) ('A' + k) + ") ");
+								questionTextParagraph.getFormat().setLeftIndent(-5.7f);
+								questionTextParagraph.appendText(choicesForQuestion.get(k));
+								questionTextParagraph.appendText("\n");
 							}
 							questionIndex++;
 						}
@@ -819,42 +875,89 @@ public class MainWindow {
 	private void addAnswerKeyPage(Document document) throws IOException {
 		// Add a section
 		Section section = document.addSection();
+		section.getPageSetup().setHeaderDistance(35.5f); // 1,25 cm
+		section.getPageSetup().setFooterDistance(35.5f); // 1,25 cm
 		section.getPageSetup().setPageSize(PageSize.A4);
-
-//		section.getHeadersFooters().getHeader().getLastChild().close();
-//		section.getHeadersFooters().getFooter().getLastChild().close();
+		section.getPageSetup().getMargins().setTop(56.75f); // 2cm
+		section.getPageSetup().getMargins().setBottom(56.75f);// 2cm
+		section.getPageSetup().getMargins().setLeft(71f); // 2.5cm
+		section.getPageSetup().getMargins().setRight(56.75f);// 2cm
 
 		Paragraph paragraph = section.addParagraph();
+		Style styleTitle = paragraph.getDocument().getStyles().findByName("answersTitleStyle");
+		if (styleTitle == null) {
+			styleTitle = new ParagraphStyle(paragraph.getDocument());
+			styleTitle.setName("answersTitleStyle");
+			styleTitle.getCharacterFormat().setFontName("TimesNewRoman");
+			styleTitle.getCharacterFormat().setFontSize(9f);
+			styleTitle.getCharacterFormat().setBold(true);
+			styleTitle.getCharacterFormat().setAllCaps(true);
+			styleTitle.getDocument().getStyles().add(styleTitle);
+		}
 		paragraph.appendBreak(BreakType.Line_Break);
-		paragraph.appendText("Answers");
+		paragraph.appendText(answersString).getCharacterFormat().setBold(true);
+		paragraph.getFormat().setLineSpacing(13.75f); // 1,15
+		paragraph.getFormat().setAfterSpacing(6f); // 6pt
 		paragraph.appendBreak(BreakType.Line_Break);
+		paragraph.applyStyle("answersTitleStyle");
 
 		// Create a table with one row and as many columns as there are answers
 		Table table = section.addTable(true);
-		table.resetCells(2, 10);
+		int numColumns = 10;
+		int numRows = (int) Math.ceil((double) answerKeys.size() / numColumns) * 2;
+		table.resetCells(numRows, numColumns);
 		table.getTableFormat().setHorizontalAlignment(RowAlignment.Center);
 
+		Style style = table.getDocument().getStyles().findByName("AnswersStyle");
+		if (style == null) {
+			style = new ParagraphStyle(table.getDocument());
+			style.setName("AnswersStyle");
+			style.getCharacterFormat().setFontName("TimesNewRoman");
+			style.getCharacterFormat().setFontSize(9f);
+			style.getCharacterFormat().setBold(true);
+			table.getDocument().getStyles().add(style);
+		}
+
+		int j = 1;
 		// Populate the table with answers
-		TableRow indexRow = table.getRows().get(0);
-		for (int i = 0; i < answerKeys.size(); i++) {
-			TableCell indexCell = indexRow.getCells().get(i);
-			Paragraph indexParagraph = indexCell.addParagraph();
-			indexParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
-			indexParagraph.getFormat().setTextAlignment(TextAlignment.Center);
-			indexParagraph.appendText((i + 1) + "");
+		for (int k = 0; k < numRows; k += 2) {
+			TableRow indexRow = table.getRows().get(k);
+			for (int i = 0; i < numColumns; i++) {
+				// Set Background Color
+				indexRow.getCells().get(i).getCellFormat().setBackColor(new Color(220, 220, 220));
 
+				TableCell indexCell = indexRow.getCells().get(i);
+				Paragraph indexParagraph = indexCell.addParagraph();
+				indexParagraph.applyStyle("AnswersStyle");
+				indexParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+				indexParagraph.getFormat().setTextAlignment(TextAlignment.Center);
+				indexParagraph.getFormat().setBeforeSpacing(4);
+				indexParagraph.getFormat().setAfterSpacing(4);
+				indexParagraph.appendText((j) + "");
+				;
+				j++;
+			}
 		}
 
-		// Populate the inner table with answer keys in the second row
-		TableRow answerRow = table.getRows().get(1);
-		for (int i = 0; i < answerKeys.size(); i++) {
-			TableCell answerCell = answerRow.getCells().get(i);
-			Paragraph answerParagraph = answerCell.addParagraph();
-			answerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
-			answerParagraph.getFormat().setTextAlignment(TextAlignment.Center);
-			answerParagraph.appendText(answerKeys.get(i));
-
+		j = 0;
+		// Populate the inner table with answer keys
+		for (int k = 1; k < numRows; k += 2) {
+			TableRow answerRow = table.getRows().get(k);
+			for (int i = 0; i < numColumns; i++) {
+				if (j < answerKeys.size()) {
+					TableCell answerCell = answerRow.getCells().get(i);
+					Paragraph answerParagraph = answerCell.addParagraph();
+					answerParagraph.applyStyle("AnswersStyle");
+					answerParagraph.getFormat().setHorizontalAlignment(HorizontalAlignment.Center);
+					answerParagraph.getFormat().setTextAlignment(TextAlignment.Center);
+					answerParagraph.getFormat().setBeforeSpacing(4);
+					answerParagraph.getFormat().setAfterSpacing(4);
+					answerParagraph.appendText(answerKeys.get(j)).getCharacterFormat().setBold(false);
+					j++;
+				}
+			}
 		}
+
 	}
 
 	private void generatePdf() {

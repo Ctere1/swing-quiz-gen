@@ -12,12 +12,13 @@ public class LanguageSelection extends MainWindow {
 
 	public static void setLocale(Locale locale) {
 		resourceBundle = ResourceBundle.getBundle("LANGUAGE", locale);
-		ConfigurationManager.setSelectedLanguage(locale); 
+		ConfigurationManager.setSelectedLanguage(locale);
 		updateButtonTexts();
 		updateTitles();
 		updateComboBoxes();
 		updateToolBar();
 		updateToolBarMenuItems();
+		updateAnswersString();
 	}
 
 	private static void updateButtonTexts() {
@@ -33,6 +34,10 @@ public class LanguageSelection extends MainWindow {
 		TitledBorder titledBorder = (TitledBorder) topicField.getBorder();
 		titledBorder.setTitle(resourceBundle.getString("topicField"));
 		topicField.setBorder(titledBorder);
+
+		titledBorder = (TitledBorder) authorField.getBorder();
+		titledBorder.setTitle(resourceBundle.getString("authorField"));
+		authorField.setBorder(titledBorder);
 
 		titledBorder = (TitledBorder) questionScrollPane.getBorder();
 		titledBorder.setTitle(resourceBundle.getString("questionScrollPaneField"));
@@ -64,5 +69,9 @@ public class LanguageSelection extends MainWindow {
 		mntmGeneratePDFMenuItem.setText(resourceBundle.getString("generatePDFMenuItem"));
 		mntmGenerateDocxMenuItem.setText(resourceBundle.getString("generateDOCXMenuItem"));
 		aboutMenuItem.setText(resourceBundle.getString("aboutMenuItem"));
+	}
+
+	private static void updateAnswersString() {
+		answersString = resourceBundle.getString("answersString");
 	}
 }
