@@ -1,4 +1,4 @@
-package quizGenerator.multipleChoice;
+package quizGenerator.multipleChoice.Configuration;
 
 import java.util.Locale;
 import java.util.prefs.Preferences;

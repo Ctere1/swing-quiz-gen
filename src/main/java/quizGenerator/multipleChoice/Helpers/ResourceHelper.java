@@ -1,4 +1,4 @@
-package quizGenerator.multipleChoice;
+package quizGenerator.multipleChoice.Helpers;
 
 import java.io.IOException;
 import java.io.InputStream;

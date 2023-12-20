@@ -1,11 +1,14 @@
-package quizGenerator.multipleChoice;
+package quizGenerator.multipleChoice.Dialogs;
 
 import javax.swing.*;
+
+import quizGenerator.multipleChoice.Helpers.UpdateHelper;
+
 import java.awt.*;
 
 public class AboutDialog extends JDialog {
 
-	String version = UpdateChecker.CURRENT_VERSION;
+	String version = UpdateHelper.CURRENT_VERSION;
 
 	public AboutDialog(JFrame parent) {
 		super(parent, "About Quiz Generator", true);

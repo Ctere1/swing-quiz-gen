@@ -1,4 +1,4 @@
-package quizGenerator.multipleChoice;
+package quizGenerator.multipleChoice.Dialogs;
 
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
