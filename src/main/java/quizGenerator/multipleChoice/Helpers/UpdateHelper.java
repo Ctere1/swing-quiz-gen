@@ -16,7 +16,7 @@ public class UpdateHelper {
 
 	public static final String REPO_OWNER = "Ctere1";
 	public static final String REPO_NAME = "swing-quiz-gen";
-	public static final String CURRENT_VERSION = "0.2.0";
+	public static final String CURRENT_VERSION = "v0.2.0";
 
 	public static boolean checkForUpdates() throws Exception {
 		try {
